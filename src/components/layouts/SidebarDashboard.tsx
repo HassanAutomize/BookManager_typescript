@@ -59,13 +59,13 @@ const SidebarDashboard = () => {
           </SidebarItem>
 
 
-          <SidebarItem
+          {/* <SidebarItem
             icon={<PencilLine className="w-5 h-5" />}
             to="/editbook"
             isCollapsed={isCollapsed}
           >
             Edit Book
-          </SidebarItem>
+          </SidebarItem> */}
         </nav>
       </aside>
 
