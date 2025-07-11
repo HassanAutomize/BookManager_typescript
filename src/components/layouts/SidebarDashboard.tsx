@@ -1,6 +1,6 @@
 "use client";
 
-import { FilePlus, Home, PencilLine, Menu } from "lucide-react";
+import { FilePlus, Home, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -57,15 +57,6 @@ const SidebarDashboard = () => {
           >
             Add Book
           </SidebarItem>
-
-
-          {/* <SidebarItem
-            icon={<PencilLine className="w-5 h-5" />}
-            to="/editbook"
-            isCollapsed={isCollapsed}
-          >
-            Edit Book
-          </SidebarItem> */}
         </nav>
       </aside>
 

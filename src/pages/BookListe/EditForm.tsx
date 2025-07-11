@@ -42,9 +42,11 @@ const EditForm = () => {
     }
   };
 
+  
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} style={{ maxWidth: 600, margin: "2rem auto", padding: 20, backgroundColor: "#f9f9f9", borderRadius: 8 }}>
-      <h2 style={{ marginBottom: 20 }}>Modifier Livre</h2>
+      <h1 style={{ marginBottom: 20 , fontSize: "24px", fontWeight: "bold" }}>Modifier Livre</h1>
 
       <div style={{ marginBottom: 16 }}>
         <label htmlFor="title" style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>Titre</label>
