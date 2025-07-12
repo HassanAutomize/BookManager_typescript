@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PencilLine, Trash } from "lucide-react";
@@ -14,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useBooks } from "@/pages/BookListe/BooksContext";
+import { useNavigate } from "react-router-dom";
 
 
 type Book = {
@@ -23,43 +24,47 @@ type Book = {
 };
 
 const columns: ColumnDef<Book>[] = [
-  {
-    header: "ID",
-    accessorKey: "id",
-  },
-  {
-    header: "Title",
-    accessorKey: "title",
-  },
-  {
-    header: "Description",
-    accessorKey: "body",
-  },
+  { header: "ID", accessorKey: "id" },
+  { header: "Title", accessorKey: "title" },
+  { header: "Description", accessorKey: "body" },
 ];
 
 const BooksTable: React.FC = () => {
-  const [data, setData] = useState<Book[]>([]);
+  const { books, setBooks } = useBooks();  
   const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState("");
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
-  const { showToast } = useToast(); 
+  const { showToast } = useToast();
 
-  useEffect(() => {
+useEffect(() => {
+  
+  if (books.length === 0) {
+    setLoading(true);
     axios
       .get("https://jsonplaceholder.typicode.com/posts?_limit=20")
       .then((response) => {
-        setData(response.data);
-        setLoading(false);
+        setBooks(response.data);
       })
       .catch((error) => {
         console.error("Erreur lors du chargement :", error);
-        setLoading(false);
-      });
-  }, []);
+      })
+      .finally(() => setLoading(false));
+  } else {
+    console.log("Chargement évité, données modifiées présentes :", books);
+    setLoading(false);
+  }
+}, [books, setBooks]);
+
+const navigate = useNavigate();
+
+
+
+
+
 
   const table = useReactTable({
-    data,
+    data: books,  
     columns,
     state: { globalFilter, pagination },
     onGlobalFilterChange: setGlobalFilter,
@@ -78,6 +83,7 @@ const BooksTable: React.FC = () => {
         description: `Le livre avec l'ID ${bookId} a été supprimé.`,
         variant: "success",
       });
+      setBooks((prevData) => prevData.filter((book) => book.id !== bookId));  // <-- mise à jour dans contexte
     } else {
       showToast({
         title: "Suppression annulée",
@@ -86,7 +92,6 @@ const BooksTable: React.FC = () => {
       });
     }
   };
-
 
   return (
     <Card>
@@ -122,14 +127,9 @@ const BooksTable: React.FC = () => {
                       <td className="px-4 py-2 text-sm border-b">{row.original.body}</td>
                       <td className="px-4 py-2 text-sm border-b">
                         <div className="flex items-center space-x-2">
-                          <button
-                            className="text-blue-600 hover:underline mr-2"
-                            onClick={() =>
-                              (window.location.href = `/EditBook/${row.original.id}`)
-                            }
-                          >
-                            <PencilLine />
-                          </button>
+                          <button onClick={() => navigate(`/EditBook/${row.original.id}`)}>
+  <PencilLine />
+</button>
                           <button
                             className="text-red-600"
                             onClick={() => handleDelete(row.original.id)}
