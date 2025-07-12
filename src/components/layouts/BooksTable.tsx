@@ -10,11 +10,19 @@ import {
   ColumnDef,
 } from "@tanstack/react-table";
 import { useToast } from "@/hooks/use-toast"; 
-
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBooks } from "@/pages/BookListe/BooksContext";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 
 type Book = {
@@ -34,8 +42,9 @@ const BooksTable: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState("");
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-
+  const [openModal, setOpenModal] = useState(false);
   const { showToast } = useToast();
+  const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
 
 useEffect(() => {
   
@@ -59,10 +68,6 @@ useEffect(() => {
 const navigate = useNavigate();
 
 
-
-
-
-
   const table = useReactTable({
     data: books,  
     columns,
@@ -75,15 +80,15 @@ const navigate = useNavigate();
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const handleDelete = (bookId: number) => {
-    const confirmed = window.confirm(`Voulez-vous vraiment supprimer le livre ID ${bookId} ?`);
-    if (confirmed) {
+  const handleDelete = async (bookId: number) => {
+
+    if (bookId) {
       showToast({
         title: "Livre supprimé",
         description: `Le livre avec l'ID ${bookId} a été supprimé.`,
         variant: "success",
       });
-      setBooks((prevData) => prevData.filter((book) => book.id !== bookId));  // <-- mise à jour dans contexte
+      setBooks((prevData) => prevData.filter((book) => book.id !== bookId));
     } else {
       showToast({
         title: "Suppression annulée",
@@ -93,80 +98,118 @@ const navigate = useNavigate();
     }
   };
 
+  const handleConfirmDelete = () => {
+    if (selectedBookId !== null) {
+      handleDelete(selectedBookId);
+      setOpenModal(false);
+      setSelectedBookId(null);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Book List</CardTitle>
+      <CardTitle>Book List</CardTitle>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <Skeleton className="w-full h-32" />
-        ) : (
-          <>
-            <input
-              value={globalFilter || ""}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              placeholder="Search books"
-              className="mb-4 p-2 border rounded"
-            />
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="px-4 py-2 border-b text-sm font-medium">ID</th>
-                    <th className="px-4 py-2 border-b text-sm font-medium">Title</th>
-                    <th className="px-4 py-2 border-b text-sm font-medium">Description</th>
-                    <th className="px-4 py-2 border-b text-sm font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="hover:bg-muted/50">
-                      <td className="px-4 py-2 text-sm border-b">{row.original.id}</td>
-                      <td className="px-4 py-2 text-sm border-b">{row.original.title}</td>
-                      <td className="px-4 py-2 text-sm border-b">{row.original.body}</td>
-                      <td className="px-4 py-2 text-sm border-b">
-                        <div className="flex items-center space-x-2">
-                          <button onClick={() => navigate(`/EditBook/${row.original.id}`)}>
-  <PencilLine />
-</button>
-                          <button
-                            className="text-red-600"
-                            onClick={() => handleDelete(row.original.id)}
-                          >
-                            <Trash />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex justify-between items-center mt-4">
-              <button onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
-                First
-              </button>
-              <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-                Prev
-              </button>
-              <span>
-                Page <strong>{table.getState().pagination.pageIndex + 1}</strong> of{" "}
-                {table.getPageCount()}
-              </span>
-              <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-                Next
-              </button>
-              <button
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
-              >
-                Last
-              </button>
-            </div>
-          </>
-        )}
+      {loading ? (
+        <Skeleton className="w-full h-32" />
+      ) : (
+        <>
+        <input
+          value={globalFilter || ""}
+          onChange={(e) => setGlobalFilter(e.target.value)}
+          placeholder="Search books"
+          className="mb-4 p-2 border rounded"
+        />
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+          <thead className="bg-muted">
+            <tr>
+            <th className="px-4 py-2 border-b text-sm font-medium">ID</th>
+            <th className="px-4 py-2 border-b text-sm font-medium">Title</th>
+            <th className="px-4 py-2 border-b text-sm font-medium">Description</th>
+            <th className="px-4 py-2 border-b text-sm font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map((row) => (
+            <tr key={row.id} className="hover:bg-muted/50">
+              <td className="px-4 py-2 text-sm border-b">{row.original.id}</td>
+              <td className="px-4 py-2 text-sm border-b">{row.original.title}</td>
+              <td className="px-4 py-2 text-sm border-b">{row.original.body}</td>
+              <td className="px-4 py-2 text-sm border-b">
+              <div className="flex items-center space-x-2">
+                <button onClick={() => navigate(`/EditBook/${row.original.id}`)}>
+                <PencilLine />
+                </button>
+                <button
+                className="text-red-600"
+                onClick={() => {
+                  setSelectedBookId(row.original.id);
+                  setOpenModal(true);
+                }}
+                >
+                <Trash />
+                </button>
+              </div>
+              </td>
+            </tr>
+            ))}
+          </tbody>
+          </table>
+        </div>
+        <div className="flex justify-between items-center mt-4">
+          <button onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
+          First
+          </button>
+          <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+          Prev
+          </button>
+          <span>
+          Page <strong>{table.getState().pagination.pageIndex + 1}</strong> of{" "}
+          {table.getPageCount()}
+          </span>
+          <button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          Next
+          </button>
+          <button
+          onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+          disabled={!table.getCanNextPage()}
+          >
+          Last
+          </button>
+        </div>
+        </>
+      )}
       </CardContent>
+      <Dialog open={openModal} onOpenChange={setOpenModal}>
+      <DialogContent>
+        <DialogHeader>
+        <DialogTitle>Confirmer la suppression</DialogTitle>
+        <DialogDescription>
+          Voulez-vous vraiment supprimer ce livre ?
+        </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+        <Button
+          variant="destructive"
+          onClick={handleConfirmDelete}
+        >
+          Confirmer
+          </Button>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setOpenModal(false);
+            setSelectedBookId(null);
+          }}
+        >
+          Annuler
+        </Button>
+        </DialogFooter>
+      </DialogContent>
+      </Dialog>
     </Card>
   );
 };

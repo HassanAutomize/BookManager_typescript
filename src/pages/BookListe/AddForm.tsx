@@ -1,9 +1,17 @@
-import { toast } from "sonner"; 
+import { useState } from "react";
+import { toast } from "sonner";
+import axios from "axios";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react"; 
-import { useBooks } from "./BooksContext";
+import { useBooks } from "@/pages/BookListe/BooksContext";
+import {
+  Dialog,
+  DialogClose,
+  DialogFooter,
+  DialogContent,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const bookSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
@@ -22,34 +30,42 @@ const AddBookForm: React.FC = () => {
     resolver: zodResolver(bookSchema),
   });
 
-  const [isFormSubmitted, setIsFormSubmitted] = useState(false); 
+  const { setBooks } = useBooks();
+  const [open, setOpen] = useState(true); 
 
-  const onSubmit = (data: BookFormData) => {
-    console.log("Livre ajouté:", data);
+  const onSubmit = async (data: BookFormData) => {
+    try {
+      const response = await axios.post("https://jsonplaceholder.typicode.com/posts", {
+        title: data.title,
+        body: data.description,
+      });
 
-   
-    toast.success("Livre ajouté avec succès !");
-    reset();
+      const newBook = {
+        id: response.data.id || Math.floor(Math.random() * 100000),
+        title: data.title,
+        body: data.description,
+      };
 
-  
-    setIsFormSubmitted(true);
+      setBooks((prevBooks) => [...prevBooks, newBook]);
+
+      toast.success("Livre ajouté avec succès ✅");
+      reset();
+      setOpen(false);
+    } catch (error) {
+      console.error("Erreur d'ajout :", error);
+      toast.error("Erreur lors de l'ajout du livre ❌");
+    }
   };
 
   return (
-    <div>
-      {isFormSubmitted ? (
-      
-        <div className="text-green-600 font-semibold">
-          Livre ajouté avec succès !
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label htmlFor="title" className="block font-medium">
               Titre
             </label>
             <input
-              type="text"
               id="title"
               {...register("title")}
               className="w-full border px-3 py-2 rounded"
@@ -65,7 +81,6 @@ const AddBookForm: React.FC = () => {
               Description
             </label>
             <input
-              type="text"
               id="description"
               {...register("description")}
               className="w-full border px-3 py-2 rounded"
@@ -76,15 +91,19 @@ const AddBookForm: React.FC = () => {
             )}
           </div>
 
-          <button
-            type="submit"
-            className="px-4 py-2 bg-green-600 text-white rounded"
-          >
-            Ajouter
-          </button>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Annuler
+              </Button>
+            </DialogClose>
+            <Button type="submit" className="bg-green-600 text-white">
+              Ajouter
+            </Button>
+          </DialogFooter>
         </form>
-      )}
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
