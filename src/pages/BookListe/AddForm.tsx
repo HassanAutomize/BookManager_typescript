@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -7,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useBooks } from "@/pages/BookListe/BooksContext";
 import {
   Dialog,
-  DialogClose,
   DialogFooter,
   DialogContent,
 } from "@/components/ui/dialog";
@@ -20,7 +18,7 @@ const bookSchema = z.object({
 
 type BookFormData = z.infer<typeof bookSchema>;
 
-const AddBookForm: React.FC = () => {
+const AddBookForm: React.FC<{ open: boolean; setOpen: (open: boolean) => void }> = ({ open, setOpen }) => {
   const {
     register,
     handleSubmit,
@@ -31,31 +29,46 @@ const AddBookForm: React.FC = () => {
   });
 
   const { setBooks } = useBooks();
-  const [open, setOpen] = useState(true); 
-
+  const { showToast } = useToast();
   const onSubmit = async (data: BookFormData) => {
-    try {
-      const response = await axios.post("https://jsonplaceholder.typicode.com/posts", {
-        title: data.title,
-        body: data.description,
-      });
+  console.log("Soumission du formulaire", data); 
+  try {
+    const response = await axios.post("https://jsonplaceholder.typicode.com/posts", {
+      title: data.title,
+      body: data.description,
+    });
 
-      const newBook = {
-        id: response.data.id || Math.floor(Math.random() * 100000),
-        title: data.title,
-        body: data.description,
-      };
+    console.log("Réponse de l'API :", response.data); 
 
-      setBooks((prevBooks) => [...prevBooks, newBook]);
+    const newBook = {
+      id: response.data.id || Math.floor(Math.random() * 100000),
+      title: data.title,
+      body: data.description,
+    };
 
-      toast.success("Livre ajouté avec succès ✅");
-      reset();
-      setOpen(false);
-    } catch (error) {
-      console.error("Erreur d'ajout :", error);
-      toast.error("Erreur lors de l'ajout du livre ❌");
-    }
-  };
+    setBooks((prevBooks) => {
+      const updatedBooks = [...prevBooks, newBook];
+      console.log("Livres après ajout :", updatedBooks); 
+      return updatedBooks;
+    });
+
+    showToast({
+  title: "Livre ajouté avec succès !",
+  description: "Le livre a été enregistré correctement.",
+  variant: "success",
+});
+    reset();
+    setOpen(false);
+  } catch (error) {
+    console.error("Erreur lors de l'ajout :", error);
+    showToast({
+      title: "Erreur lors de l'ajout du livre",
+      description: "Une erreur s'est produite lors de l'ajout du livre.",
+      variant: "error",
+    });
+  }
+};
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -92,11 +105,13 @@ const AddBookForm: React.FC = () => {
           </div>
 
           <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Annuler
-              </Button>
-            </DialogClose>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)} 
+            >
+              Annuler
+            </Button>
             <Button type="submit" className="bg-green-600 text-white">
               Ajouter
             </Button>

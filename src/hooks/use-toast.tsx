@@ -48,7 +48,7 @@ export const ToastProviderWrapper = ({ children }: { children: ReactNode }) => {
     <ToastContext.Provider value={{ showToast }}>
       <ToastProvider>
         {children}
-        <ToastRoot open={open} onOpenChange={setOpen} className={`bg-gray-900 text-white rounded shadow p-4 toast-${message.variant}`}>
+        <ToastRoot open={open} onOpenChange={setOpen} className={`bg-gray-600 text-white rounded shadow p-4 toast-${message.variant}`}>
           <div className="flex justify-between items-start gap-2">
             <div>
               <ToastTitle className="font-semibold">{message.title}</ToastTitle>

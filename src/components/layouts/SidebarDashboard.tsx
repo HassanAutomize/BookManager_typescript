@@ -4,7 +4,6 @@ import { FilePlus, Home, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Drawer } from "@/components/ui/drawer";
 import AddBookForm from "@/pages/BookListe/AddForm";
 
 const SidebarDashboard = () => {
@@ -62,9 +61,10 @@ const SidebarDashboard = () => {
 
      
        
-      <Drawer open={isOpen} onOpenChange={setIsOpen} title="Ajouter un Livre" position="bottom">
-        <AddBookForm /> 
-      </Drawer>
+      
+      <AddBookForm open={isOpen} setOpen={setIsOpen} />
+
+     
     </>
     
   );
