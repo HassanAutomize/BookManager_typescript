@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, {  useState } from "react";
 import axios from "axios";
 import { PencilLine, Trash } from "lucide-react";
+import SearchInput from "./SearchInput";
+import { useQuery } from "react-query";
 import {
   useReactTable,
   getCoreRowModel,
@@ -10,21 +12,11 @@ import {
   ColumnDef,
 } from "@tanstack/react-table";
 import { useToast } from "@/hooks/use-toast"; 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBooks } from "@/pages/BookListe/BooksContext";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-
-
+import Modal from "./ModalDelete";
 type Book = {
   id: number;
   title: string;
@@ -39,37 +31,34 @@ const columns: ColumnDef<Book>[] = [
 
 const BooksTable: React.FC = () => {
   const { books, setBooks } = useBooks();  
-  const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState("");
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [openModal, setOpenModal] = useState(false);
   const { showToast } = useToast();
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
+  const navigate = useNavigate();
+  const {
+    data: fetchedBooks = [],
+    isLoading,
+  } = useQuery({
+    queryKey: ['books'],
+    queryFn: () =>
+      axios
+        .get('https://jsonplaceholder.typicode.com/posts?_limit=20')
+        .then((res) => res.data),
+    staleTime: 1000 * 60 * 5, 
+    onSuccess: (data) => {
+      
+      if (books.length === 0) {
+        setBooks(data);
+      }
+    },
+  });
 
-useEffect(() => {
-  
-  if (books.length === 0) {
-    setLoading(true);
-    axios
-      .get("https://jsonplaceholder.typicode.com/posts?_limit=20")
-      .then((response) => {
-        setBooks(response.data);
-      })
-      .catch((error) => {
-        console.error("Erreur lors du chargement :", error);
-      })
-      .finally(() => setLoading(false));
-  } else {
-    console.log("Chargement évité, données modifiées présentes :", books);
-    setLoading(false);
-  }
-}, [books, setBooks]);
-
-const navigate = useNavigate();
-
+  const displayedBooks = books.length > 0 ? books : fetchedBooks;
 
   const table = useReactTable({
-    data: books,  
+    data: displayedBooks,
     columns,
     state: { globalFilter, pagination },
     onGlobalFilterChange: setGlobalFilter,
@@ -112,16 +101,11 @@ const navigate = useNavigate();
       <CardTitle>Book List</CardTitle>
       </CardHeader>
       <CardContent>
-      {loading ? (
+      {isLoading ? (
         <Skeleton className="w-full h-32" />
       ) : (
         <>
-        <input
-          value={globalFilter || ""}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Search books"
-          className="mb-4 p-2 border rounded"
-        />
+        <SearchInput globalFilter ={globalFilter} setGlobalFilter={setGlobalFilter} />
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
           <thead className="bg-muted">
@@ -183,33 +167,11 @@ const navigate = useNavigate();
         </>
       )}
       </CardContent>
-      <Dialog open={openModal} onOpenChange={setOpenModal}>
-      <DialogContent>
-        <DialogHeader>
-        <DialogTitle>Confirmer la suppression</DialogTitle>
-        <DialogDescription>
-          Voulez-vous vraiment supprimer ce livre ?
-        </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-        <Button
-          variant="destructive"
-          onClick={handleConfirmDelete}
-        >
-          Confirmer
-          </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            setOpenModal(false);
-            setSelectedBookId(null);
-          }}
-        >
-          Annuler
-        </Button>
-        </DialogFooter>
-      </DialogContent>
-      </Dialog>
+      <Modal
+        openModal={openModal}
+        setOpenModal={setOpenModal}
+        handleConfirmDelete={handleConfirmDelete}
+        setSelectedBookId={setSelectedBookId}/>
     </Card>
   );
 };

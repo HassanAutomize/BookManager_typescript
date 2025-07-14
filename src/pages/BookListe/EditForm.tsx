@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useBooks } from "./BooksContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ const EditForm = () => {
   const { setBooks } = useBooks();
   const [openModal, setOpenModal] = useState(false);
   const [pendingData, setPendingData] = useState<FormData | null>(null);
+  const { showToast } = useToast();
   const {
     register,
     handleSubmit,
@@ -61,9 +63,18 @@ const EditForm = () => {
         )
       );
       setOpenModal(false);
+      showToast({
+        title: "Livre mis à jour avec succès !",
+        description: "Le livre a été enregistré correctement.",
+        variant: "success",
+      });
       navigate("/ListBook");
     } catch {
-      alert("Erreur lors de la mise à jour");
+      showToast({
+        title: "Erreur lors de la mise à jour",
+        description: "Une erreur s'est produite lors de la mise à jour du livre.",
+        variant: "error",
+      });
     }
   };
 
