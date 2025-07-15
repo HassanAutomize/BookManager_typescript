@@ -17,7 +17,7 @@ const Modal: React.FC<{
 }> = ({ openModal, setOpenModal, handleConfirmDelete, setSelectedBookId }) => {
     return (
     <>
-        <Dialog open={openModal} onOpenChange={setOpenModal}>
+    <Dialog open={openModal} onOpenChange={setOpenModal}>
       <DialogContent>
         <DialogHeader>
         <DialogTitle>Confirmer la suppression</DialogTitle>

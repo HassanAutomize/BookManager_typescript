@@ -4,8 +4,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useBooks } from "./BooksContext";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "react-query";
 import {
   Dialog,
   DialogContent,
@@ -24,13 +24,13 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const EditForm = () => {
+const EditForm: React.FC = ({ setBooks }) => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { setBooks } = useBooks();
   const [openModal, setOpenModal] = useState(false);
   const [pendingData, setPendingData] = useState<FormData | null>(null);
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
   const {
     register,
     handleSubmit,
@@ -53,30 +53,25 @@ const EditForm = () => {
   };
 
   const confirmUpdate = async () => {
-    if (!pendingData) return;
+  if (!pendingData) return;
 
-    try {
-      await axios.put(`https://jsonplaceholder.typicode.com/posts/${id}`, pendingData);
-      setBooks((prevBooks) =>
-        prevBooks.map((book) =>
-          book.id === Number(id) ? { ...book, ...pendingData } : book
-        )
-      );
-      setOpenModal(false);
-      showToast({
-        title: "Livre mis à jour avec succès !",
-        description: "Le livre a été enregistré correctement.",
-        variant: "success",
-      });
-      navigate("/ListBook");
-    } catch {
-      showToast({
-        title: "Erreur lors de la mise à jour",
-        description: "Une erreur s'est produite lors de la mise à jour du livre.",
-        variant: "error",
-      });
-    }
-  };
+
+  setBooks((prevBooks) =>
+    prevBooks.map((book) =>
+      book.id == id ? { ...book, ...pendingData } : book
+    )
+  );
+
+  showToast({
+    title: "Livre mis à jour localement",
+    description: "Les données ont été modifiées dans l'état local.",
+    variant: "success",
+  });
+
+  setOpenModal(false);
+  navigate("/ListBook");
+};
+
 
   return (
     <>
@@ -91,7 +86,6 @@ const EditForm = () => {
         }}
       >
         <h1 style={{ marginBottom: 20, fontSize: "24px", fontWeight: "bold" }}>Modifier Livre</h1>
-
         <div style={{ marginBottom: 16 }}>
           <label htmlFor="title" style={{ display: "block", marginBottom: 6, fontWeight: "bold" }}>
             Titre

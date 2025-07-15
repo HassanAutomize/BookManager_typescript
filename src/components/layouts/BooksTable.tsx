@@ -2,7 +2,7 @@ import React, {  useState } from "react";
 import axios from "axios";
 import { PencilLine, Trash } from "lucide-react";
 import SearchInput from "./SearchInput";
-import { useQuery } from "react-query";
+import { useQuery , useMutation } from "react-query";
 import {
   useReactTable,
   getCoreRowModel,
@@ -14,51 +14,71 @@ import {
 import { useToast } from "@/hooks/use-toast"; 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useBooks } from "@/pages/BookListe/BooksContext";
 import { useNavigate } from "react-router-dom";
 import Modal from "./ModalDelete";
+
 type Book = {
   id: number;
   title: string;
   body: string;
 };
 
-const columns: ColumnDef<Book>[] = [
+  const columns: ColumnDef<Book>[] = [
   { header: "ID", accessorKey: "id" },
   { header: "Title", accessorKey: "title" },
-  { header: "Description", accessorKey: "body" },
-];
+  { header: "Description", accessorKey: "body" },];
 
-const BooksTable: React.FC = () => {
-  const { books, setBooks } = useBooks();  
+  const BooksTable: React.FC = ({books , setBooks}) => {
   const [globalFilter, setGlobalFilter] = useState("");
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [openModal, setOpenModal] = useState(false);
   const { showToast } = useToast();
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
+  
   const navigate = useNavigate();
   const {
-    data: fetchedBooks = [],
+    data: booksdata = [],
     isLoading,
+
   } = useQuery({
     queryKey: ['books'],
     queryFn: () =>
-      axios
-        .get('https://jsonplaceholder.typicode.com/posts?_limit=20')
-        .then((res) => res.data),
+       axios.get('https://jsonplaceholder.typicode.com/posts?_limit=20')
+      .then((res) => res.data),
+  onSuccess: (data) => {
+    setBooks(data); 
+  },
     staleTime: 1000 * 60 * 5, 
-    onSuccess: (data) => {
-      
-      if (books.length === 0) {
-        setBooks(data);
-      }
-    },
   });
+ 
+   
 
-  const displayedBooks = books.length > 0 ? books : fetchedBooks;
+
+
+  const deleteBookMutation = useMutation({
+    mutationFn: (id : number) => 
+      axios.delete(`https://jsonplaceholder.typicode.com/posts/${id}`),
+    onSuccess: (_,id) => {
+       setBooks((prevBooks) => prevBooks.filter((book) => book.id !== id));
+    },
+
+  })
+
+   const handleDelete = (id : number) => {
+    deleteBookMutation.mutate(id);
+    setBooks((prevBooks) => prevBooks.filter((book) => book.id !== id));
+    
+      showToast({
+        title : "Livre supprime",
+        description: "Le livre a été supprimé avec succès",
+        variant: "success",
+      })
+    
+
+  };
 
   const table = useReactTable({
-    data: displayedBooks,
+    data: books,
     columns,
     state: { globalFilter, pagination },
     onGlobalFilterChange: setGlobalFilter,
@@ -69,23 +89,6 @@ const BooksTable: React.FC = () => {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  const handleDelete = async (bookId: number) => {
-
-    if (bookId) {
-      showToast({
-        title: "Livre supprimé",
-        description: `Le livre avec l'ID ${bookId} a été supprimé.`,
-        variant: "success",
-      });
-      setBooks((prevData) => prevData.filter((book) => book.id !== bookId));
-    } else {
-      showToast({
-        title: "Suppression annulée",
-        description: "Aucune modification effectuée.",
-        variant: "error",
-      });
-    }
-  };
 
   const handleConfirmDelete = () => {
     if (selectedBookId !== null) {
@@ -172,6 +175,7 @@ const BooksTable: React.FC = () => {
         setOpenModal={setOpenModal}
         handleConfirmDelete={handleConfirmDelete}
         setSelectedBookId={setSelectedBookId}/>
+      
     </Card>
   );
 };

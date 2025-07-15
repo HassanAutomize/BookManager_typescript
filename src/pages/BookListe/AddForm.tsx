@@ -3,13 +3,9 @@ import axios from "axios";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useBooks } from "@/pages/BookListe/BooksContext";
-import {
-  Dialog,
-  DialogFooter,
-  DialogContent,
-} from "@/components/ui/dialog";
+import {Dialog,DialogFooter,DialogContent, DialogHeader} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 const bookSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
@@ -18,7 +14,15 @@ const bookSchema = z.object({
 
 type BookFormData = z.infer<typeof bookSchema>;
 
-const AddBookForm: React.FC<{ open: boolean; setOpen: (open: boolean) => void }> = ({ open, setOpen }) => {
+type AddBookFormProps = {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  setBooks: React.Dispatch<React.SetStateAction<Book[]>>;
+};
+
+
+const AddBookForm: React.FC<AddBookFormProps> = ({ open, setOpen, setBooks }) => {
+
   const {
     register,
     handleSubmit,
@@ -28,17 +32,15 @@ const AddBookForm: React.FC<{ open: boolean; setOpen: (open: boolean) => void }>
     resolver: zodResolver(bookSchema),
   });
 
-  const { setBooks } = useBooks();
   const { showToast } = useToast();
   const onSubmit = async (data: BookFormData) => {
-  console.log("Soumission du formulaire", data); 
   try {
     const response = await axios.post("https://jsonplaceholder.typicode.com/posts", {
       title: data.title,
       body: data.description,
     });
 
-    console.log("Réponse de l'API :", response.data); 
+    console.log("la reponse de l'api :", response.data);
 
     const newBook = {
       id: response.data.id || Math.floor(Math.random() * 100000),
@@ -46,13 +48,13 @@ const AddBookForm: React.FC<{ open: boolean; setOpen: (open: boolean) => void }>
       body: data.description,
     };
 
-    setBooks((prevBooks) => {
-      const updatedBooks = [...prevBooks, newBook];
-      console.log("Livres après ajout :", updatedBooks); 
-      return updatedBooks;
-    });
+setBooks((prevBooks) => {
+  const updatedBooks = [...prevBooks, newBook];
+  console.log("Livres après ajout :", updatedBooks); 
+  return updatedBooks;
+});
 
-    showToast({
+  showToast({
   title: "Livre ajouté avec succès !",
   description: "Le livre a été enregistré correctement.",
   variant: "success",
@@ -72,7 +74,9 @@ const AddBookForm: React.FC<{ open: boolean; setOpen: (open: boolean) => void }>
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+     
       <DialogContent>
+         <DialogTitle>Ajouter un livre</DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label htmlFor="title" className="block font-medium">
